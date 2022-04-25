@@ -15,10 +15,11 @@ class MainViewModel : ViewModel() {
     private val _listSearchGame = MutableLiveData<List<SearchedGame>>()
     val listSearchGame: LiveData<List<SearchedGame>> = _listSearchGame
 
+    //--> Implementasi RxJava + Retrofit <--//
     fun getSearchedGameData(query: String) {
         CompositeDisposable().add(
             SearchGameApi.retrofitService.getSearchedGameData(query)
-                .subscribeOn(Schedulers.io())
+                .subscribeOn(Schedulers.io()) // Menentukan operasi observable akan dilakukan di thread I/O (background thread)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ searchedGameResponse ->
                     _listSearchGame.value = searchedGameResponse.results

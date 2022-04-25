@@ -8,6 +8,9 @@ import androidx.appcompat.app.AppCompatActivity
 import com.example.rxbindingplayground.databinding.ActivityMainBinding
 import com.example.rxbindingplayground.viewmodel.MainViewModel
 import com.jakewharton.rxbinding4.widget.textChanges
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
+import io.reactivex.rxjava3.schedulers.Schedulers
+import java.util.concurrent.TimeUnit
 
 class MainActivity : AppCompatActivity() {
 
@@ -22,16 +25,18 @@ class MainActivity : AppCompatActivity() {
         binding.apply {
             lifecycleOwner = this@MainActivity
 
-            editText.apply {
-                requestFocus()
-                textChanges() // Perubahan teks
-                    .filter { it.length > 3 } // Request API ketika inputan user di atas 3
-                    .subscribe { text ->
-                        viewModel.getSearchedGameData(text.toString())
-                        Toast.makeText(this@MainActivity, text.toString(), Toast.LENGTH_SHORT)
-                            .show()
-                    }
-            }
+            //--> Implementasi RxBinding <--//
+            editText.requestFocus()
+            editText.textChanges() // Perubahan teks
+                .filter { it.length > 3 } // Melakukan request API ketika text inputan user sudah di atas 3
+                .debounce(500, TimeUnit.MILLISECONDS) // Melakukan pencarian ketika user berhenti mengetik selama 0.5 detik
+                .subscribeOn(Schedulers.io()) // Menentukan operasi observable akan dilakukan di thread I/O (background thread)
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe { text ->
+                    viewModel.getSearchedGameData(text.toString())
+                    Toast.makeText(this@MainActivity, text.toString(), Toast.LENGTH_SHORT)
+                        .show()
+                }
         }
 
         viewModel.listSearchGame.observe(this) { listSearchedGame ->
